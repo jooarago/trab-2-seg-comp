@@ -1,7 +1,10 @@
 import primos
 import rsa
 import oaep
+import hash
+import json
 
+enc_keys = []
 def teste_rsa_oaep_txt(filepath):
     # getting file content
     with open(filepath, 'rb') as f:
@@ -12,6 +15,7 @@ def teste_rsa_oaep_txt(filepath):
     p = primos.gera_primo()
     q = primos.gera_primo()
     key_pub, key_priv = rsa.gen_rsa_key(p, q)
+    enc_keys.append([key_pub, key_priv])
 
     # encoding...
     print("Cifrando...")
@@ -20,10 +24,44 @@ def teste_rsa_oaep_txt(filepath):
     # decoding...
     print("Decifrando...")
     msg_decoded = oaep.decypher(msg_encoded, key_priv)
-
+    
     # showing results...
     print("Original:", msg_in_bytes.decode('utf-8', errors='replace'))
     print("Decifrada:", msg_decoded.decode('utf-8', errors='replace'))
     print("Sucesso???", msg_in_bytes == msg_decoded)
 
+    # hashing...
+    print("Hashing...")
+    hash_original = hash.hash_sha3_256(msg_in_bytes)
+    sig_bytes = oaep.cypher(hash_original, key_priv)
+    sig_b64 = hash.hash_base64(sig_bytes)
+    mensagem_b64 = hash.hash_base64(msg_in_bytes)
+    signed_data = {"mensagem_base64": mensagem_b64,"assinatura": sig_b64}
+
+    # saving signed data...
+    print("Salvando...")
+    with open("msg_assinada.json", "w") as f:
+        json.dump(signed_data, f)
+
+def verificar_assinatura(filepath):
+    # getting file content
+    with open(filepath, 'r') as f:
+        signed_data = json.load(f)
+        
+    # getting signature and message
+    mensagem_b64 = signed_data["mensagem_base64"]
+    sig_b64 = signed_data["assinatura"]
+
+    # getting fixed-length hash from signature
+    sig_bytes = hash.base64_to_bytes(sig_b64)
+    hash_msg_original = oaep.decypher(sig_bytes, enc_keys[0][0]) # using public key to decrypt
+
+    # getting fixed-length hash from message
+    msg_bytes = hash.base64_to_bytes(mensagem_b64)
+    msg_hash = hash.hash_sha3_256(msg_bytes)
+
+    # showing results...
+    print("Comparando assinaturas:", msg_hash == hash_msg_original)
+
 teste_rsa_oaep_txt("teste.txt")
+verificar_assinatura("msg_assinada.json")
