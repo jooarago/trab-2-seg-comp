@@ -31,3 +31,19 @@ A função RSA utiliza uma mensagem $m$, um número $e$ chamado de expoente púb
 	 Gera as chaves RSA segundo a descrição do algoritmo RSA dada acima.
 - Funções `rsa_encrypt` e `rsa_decrypt`
 	Encripta e decripta a mensagem segundo a descrição do algoritmo RSA dada acima.
+# Funcionamento do SHA3
+O algoritmo SHA3-256 é um membro da família de padrões de algoritmos de hash criptográfico seguro que transforma uma mensagem de qualquer tamanho em um valor fixo de 256 bits (32 bytes), chamado de digest. A ideia principal por trás de uma função de hash é que, dado um conteúdo de entrada, ela sempre gera a mesma saída, mas mesmo uma pequena alteração na entrada resulta em um digest completamente diferente. Além disso, funções de hash como o SHA3 são projetadas para serem unidirecionais — ou seja, é computacionalmente inviável recuperar a mensagem original a partir do hash. A entrada `message` deve ser um dado em formato de bytes. A função `hashlib.sha3_256()` inicializa o algoritmo, e o método `.update(message)` alimenta a função com a mensagem a ser processada. O resultado é obtido com `.digest()`, que retorna o valor do hash em bytes. Para obter esse valor em formato legível foi empregado a base64 para codificá-lo.
+# Funcionamento da Base64
+A codificação Base64 é usada para transformar uma sequência de bytes, dados binários, em uma sequência de caracteres ASCII, string de texto, que pode ser transmitida com segurança por canais que não suportam dados binários. Os dados de entrada — por exemplo, um hash gerado por SHA3 — são passados em forma de bytes para uma função de codificação. O processo consiste em agrupar os bits da mensagem em blocos de 6 em 6 (em vez dos tradicionais 8 bits por byte), pois $2^6 = 64$, o que justifica o nome Base64. Cada grupo de 6 bits é então mapeado para um caractere da tabela Base64. A codificação Base64, portanto, não é um mecanismo de segurança nem criptografia, uma vez que ela não protege os dados, apenas os representa em um formato seguro para transporte e armazenamento textual.
+# Funções-chave de hash.py
+- Função `hash_sha3_256`
+  	Recebe uma mensagem em bytes e retorna seu hash utilizando o algoritmo SHA3, no formato de bytes.
+- Função `hash_base64`
+  	codifica os dados com `base64.b64encode()` e depois converte o resultado de volta para uma string com `.decode()`. O resultado é uma sequência de caracteres que pode conter letras, números e símbolos como `+`, `/` e `=`.
+- Função `base64_to_bytes`
+  	Decodifica uma string em Base64 e retorna a sequência original de bytes correspondente.
+# Funções-chave de main.py
+- Função `gerador_de_assinatura`
+  	 Esta função realiza o processo completo de geração de uma assinatura digital para um arquivo, utilizando o esquema RSA com codificação OAEP e hash SHA3-256. Inicialmente, ela lê o conteúdo do arquivo em bytes, gera dois primos aleatórios para compor as chaves RSA e cria o par de chaves pública e privada. Em seguida, cifra a mensagem com a chave pública e a decifra com a chave privada, garantindo a validade do par de chaves. Depois, aplica a função hash à mensagem original e cifra esse hash com a chave privada, gerando a assinatura digital. Tanto a mensagem quanto a assinatura são codificadas em base64 e salvas no arquivo `msg_assinada.json`.
+- Função `verificador_de_assinatura`
+  	Esta função realiza a verificação da autenticidade de uma assinatura digital previamente gerada, validando se a mensagem recebida corresponde à assinatura associada. Para isso, ela lê de um arquivo JSON os dados assinados — a mensagem e sua assinatura, ambos codificados em base64. Em seguida, decodifica a assinatura usando a chave pública RSA (extraída do par de chaves anteriormente gerado) para obter o hash original da mensagem. Paralelamente, recodifica a mensagem e calcula seu hash atual. Por fim, compara os dois hashes e exibe se a verificação foi bem-sucedida.
