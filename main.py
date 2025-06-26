@@ -72,7 +72,7 @@ while True:
     if x == "sair":
         break
     else:
-        filepath = input("Digite o caminho do arquivo: ")
+        filepath = input("Digite o caminho do arquivo: ").strip('"')
         gerador_de_assinatura(filepath)
         verificador_de_assinatura("msg_assinada.json")
     
